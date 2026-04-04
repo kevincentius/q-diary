@@ -20,6 +20,6 @@ import type { QEntry } from '@org/shared';
 export class App {
   private http = inject(HttpClient);
   qEntry = toSignal<QEntry | undefined>(
-    this.http.get<QEntry>('/api/debug/qentry')
+    this.http.get<QEntry>('http://localhost:3000/api/debug/qentry')
   );
 }

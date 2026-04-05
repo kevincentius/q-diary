@@ -21,6 +21,7 @@ export type NewEntry = typeof entries.$inferInsert;
 
 export const points = sqliteTable('points', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().default(1),
   sourceEntryId: integer('source_entry_id')
     .notNull()
     .references(() => entries.id, { onDelete: 'cascade' }),
@@ -31,12 +32,13 @@ export type Point = typeof points.$inferSelect;
 export type NewPoint = typeof points.$inferInsert;
 
 // ======================
-// Tags
+// Tags (per user)
 // ======================
 
 export const tags = sqliteTable('tags', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull().unique(),
+  userId: integer('user_id').notNull().default(1),
+  name: text('name').notNull(),
   parentTagId: integer('parent_tag_id').references((): any => tags.id),
 });
 
@@ -44,11 +46,12 @@ export type Tag = typeof tags.$inferSelect;
 export type NewTag = typeof tags.$inferInsert;
 
 // ======================
-// Point Tags (many-to-many)
+// Point Tags (many-to-many, per user)
 // ======================
 
 export const pointTags = sqliteTable('point_tags', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().default(1),
   pointId: integer('point_id')
     .notNull()
     .references(() => points.id, { onDelete: 'cascade' }),
@@ -61,7 +64,7 @@ export type PointTag = typeof pointTags.$inferSelect;
 export type NewPointTag = typeof pointTags.$inferInsert;
 
 // ======================
-// Fields (definitions)
+// Fields (definitions, per user)
 // ======================
 
 export const fieldTypes = {
@@ -73,6 +76,7 @@ export const fieldTypes = {
 
 export const fields = sqliteTable('fields', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().default(1),
   name: text('name').notNull(),
   type: text('type').notNull(), // 'numeric' | 'timestamp' | 'enum' | 'text'
   description: text('description'),
@@ -82,11 +86,12 @@ export type Field = typeof fields.$inferSelect;
 export type NewField = typeof fields.$inferInsert;
 
 // ======================
-// Enum Values (for enum fields)
+// Enum Values (for enum fields, per user)
 // ======================
 
 export const enumValues = sqliteTable('enum_values', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().default(1),
   fieldId: integer('field_id')
     .notNull()
     .references(() => fields.id, { onDelete: 'cascade' }),
@@ -97,11 +102,12 @@ export type EnumValue = typeof enumValues.$inferSelect;
 export type NewEnumValue = typeof enumValues.$inferInsert;
 
 // ======================
-// Field Values (actual data)
+// Field Values (actual data, per user)
 // ======================
 
 export const fieldValues = sqliteTable('field_values', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().default(1),
   pointId: integer('point_id')
     .notNull()
     .references(() => points.id, { onDelete: 'cascade' }),

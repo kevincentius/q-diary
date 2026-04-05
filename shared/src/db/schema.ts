@@ -22,84 +22,95 @@ export interface NewEntry {
 
 export interface Point {
   id: number;
+  userId: number;
   sourceEntryId: number;
   createdAt: number;
 }
 
 export interface NewPoint {
+  userId?: number;
   sourceEntryId: number;
 }
 
 // ======================
-// Tags
+// Tags (per user)
 // ======================
 
 export interface Tag {
   id: number;
+  userId: number;
   name: string;
   parentTagId?: number;
 }
 
 export interface NewTag {
+  userId?: number;
   name: string;
   parentTagId?: number;
 }
 
 // ======================
-// Point Tags
+// Point Tags (per user)
 // ======================
 
 export interface PointTag {
   id: number;
+  userId: number;
   pointId: number;
   tagId: number;
 }
 
 export interface NewPointTag {
+  userId?: number;
   pointId: number;
   tagId: number;
 }
 
 // ======================
-// Fields
+// Fields (per user)
 // ======================
 
 export type FieldType = 'numeric' | 'timestamp' | 'enum' | 'text';
 
 export interface Field {
   id: number;
+  userId: number;
   name: string;
   type: FieldType;
   description?: string;
 }
 
 export interface NewField {
+  userId?: number;
   name: string;
   type: FieldType;
   description?: string;
 }
 
 // ======================
-// Enum Values
+// Enum Values (per user)
 // ======================
 
 export interface EnumValue {
   id: number;
+  userId: number;
   fieldId: number;
   value: string;
 }
 
 export interface NewEnumValue {
+  userId?: number;
   fieldId: number;
   value: string;
 }
 
 // ======================
-// Field Values
+// Field Values (per user)
 // ======================
 
 export interface FieldValue {
   id: number;
+  userId: number;
   pointId: number;
   fieldId: number;
   numericValue?: number;
@@ -107,6 +118,7 @@ export interface FieldValue {
 }
 
 export interface NewFieldValue {
+  userId?: number;
   pointId: number;
   fieldId: number;
   numericValue?: number;

@@ -1,15 +1,18 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { db } from '../db/client';
 import { entries, type NewEntry } from '../db/schema';
-import { desc } from 'drizzle-orm';
+import { getCurrentUserId } from '../db/user';
+import { desc, eq } from 'drizzle-orm';
 
 @Controller('debug')
 export class DebugController {
   @Get('entry')
   async getEntry() {
+    const userId = getCurrentUserId();
     const result = await db
       .select()
       .from(entries)
+      .where(eq(entries.userId, userId))
       .orderBy(desc(entries.id))
       .limit(1);
     if (result.length === 0) {
@@ -20,10 +23,11 @@ export class DebugController {
 
   @Post('entry')
   async createEntry(@Body() body: NewEntry) {
+    const userId = getCurrentUserId();
     const result = await db
       .insert(entries)
       .values({
-        userId: body.userId ?? 1,
+        userId,
         content: body.content,
         createdAt: Date.now(),
         timeSpentWriting: body.timeSpentWriting,

@@ -1,0 +1,65 @@
+<div class="entry-detail">
+  <div class="tabs">
+    <button
+      class="tab"
+      [class.active]="activeTab() === 'open'"
+      (click)="switchTab('open')"
+    >
+      Open Entry
+    </button>
+    <button
+      class="tab"
+      [class.active]="activeTab() === 'new'"
+      (click)="switchTab('new')"
+    >
+      New Entry
+    </button>
+  </div>
+
+  <div class="tab-content">
+    @if (activeTab() === 'open') {
+      @if (entry()) {
+        <div class="entry-view">
+          <div class="entry-header">
+            <span class="entry-date">{{ formatDate(entry()!.createdAt) }}</span>
+            <span class="time-spent">{{
+              formatTime(entry()!.timeSpentWriting)
+            }}</span>
+            @if (!isEditing()) {
+              <button class="btn" (click)="startEdit()">Edit</button>
+            } @else {
+              <button class="btn" (click)="endEdit()">End Edit</button>
+            }
+          </div>
+          @if (isEditing()) {
+            <textarea
+              class="entry-textarea"
+              [(ngModel)]="editContent"
+              rows="20"
+            ></textarea>
+            <button class="btn primary" (click)="saveEdit()">Save</button>
+          } @else {
+            <div class="entry-content">{{ entry()!.content }}</div>
+          }
+        </div>
+      } @else {
+        <p>Select an entry from the list</p>
+      }
+    } @else {
+      <div class="new-entry">
+        @if (!isWriting()) {
+          <button class="btn primary" (click)="startWriting()">
+            Start Writing
+          </button>
+        } @else {
+          <textarea
+            class="entry-textarea"
+            [(ngModel)]="newEntryContent"
+            rows="20"
+          ></textarea>
+          <button class="btn primary" (click)="saveNewEntry()">Save</button>
+        }
+      </div>
+    }
+  </div>
+</div>

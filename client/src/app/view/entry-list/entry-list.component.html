@@ -1,0 +1,16 @@
+<div class="entry-list">
+  <h3>Entries</h3>
+  <div class="entries">
+    @for (entry of entries(); track entry.id) {
+      <div
+        class="entry-item"
+        [class.selected]="entry.id === selectedId()"
+        (click)="selectEntry(entry.id)"
+      >
+        {{ formatDate(entry.createdAt) }}
+      </div>
+    } @empty {
+      <p>No entries yet</p>
+    }
+  </div>
+</div>

@@ -1,0 +1,6 @@
+<div class="h-box full-screen">
+  <app-entry-list (entrySelected)="onEntrySelected($event)" #entryList>
+  </app-entry-list>
+  <app-entry-detail [entry]="selectedEntry" (entrySaved)="onEntrySaved()">
+  </app-entry-detail>
+</div>

@@ -1,7 +1,11 @@
 ## Local testing without tauri build:
 
-- npx nx serve server --output-style=stream
-- npx nx serve client
+Start local servers:
+- pnpm nx serve server --output-style=stream
+- pnpm nx serve client
+
+Linting:
+- pnpm nx run-many -t lint --parallel --output-style=static
 
 ## Tauri build script:
 

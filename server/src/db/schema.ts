@@ -1,3 +1,4 @@
+import { AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 // ======================
@@ -39,7 +40,7 @@ export const tags = sqliteTable('tags', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').notNull().default(1),
   name: text('name').notNull(),
-  parentTagId: integer('parent_tag_id').references((): any => tags.id),
+  parentTagId: integer('parent_tag_id').references((): AnySQLiteColumn => tags.id),
 });
 
 export type Tag = typeof tags.$inferSelect;

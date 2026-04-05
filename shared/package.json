@@ -14,6 +14,11 @@
     "./package.json": "./package.json"
   },
   "nx": {
-    "name": "shared"
+    "name": "shared",
+    "targets": {
+      "lint": {
+        "executor": "@nx/eslint:lint"
+      }
+    }
   }
 }

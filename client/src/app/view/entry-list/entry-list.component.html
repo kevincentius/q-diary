@@ -6,6 +6,9 @@
         class="entry-item"
         [class.selected]="entry.id === selectedId()"
         (click)="selectEntry(entry.id)"
+        (keydown.enter)="selectEntry(entry.id)"
+        tabindex="0"
+        role="button"
       >
         {{ formatDate(entry.createdAt) }}
       </div>

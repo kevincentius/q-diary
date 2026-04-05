@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import type { QEntry } from '@org/shared';
+import type { Entry } from '@org/shared';
 
 @Component({
   imports: [CommonModule],
@@ -10,8 +10,8 @@ import type { QEntry } from '@org/shared';
   standalone: true,
   template: `
     <h1>Q-Diary</h1>
-    @if (qEntry(); as entry) {
-    <p>{{ entry.content }}</p>
+    @if (entry(); as e) {
+    <p>{{ e.content }}</p>
     } @else {
     <p>Loading...</p>
     }
@@ -19,7 +19,7 @@ import type { QEntry } from '@org/shared';
 })
 export class App {
   private http = inject(HttpClient);
-  qEntry = toSignal<QEntry | undefined>(
-    this.http.get<QEntry>('http://localhost:3000/api/debug/entry')
+  entry = toSignal<Entry | undefined>(
+    this.http.get<Entry>('http://localhost:3000/api/debug/entry')
   );
 }

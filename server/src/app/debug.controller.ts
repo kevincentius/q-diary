@@ -1,16 +1,16 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { db } from '../db/client';
-import { qEntries, type QEntryInsert } from '../db/schema';
+import { entries, type NewEntry } from '../db/schema';
 import { desc } from 'drizzle-orm';
 
 @Controller('debug')
 export class DebugController {
   @Get('entry')
-  async getQEntry() {
+  async getEntry() {
     const result = await db
       .select()
-      .from(qEntries)
-      .orderBy(desc(qEntries.id))
+      .from(entries)
+      .orderBy(desc(entries.id))
       .limit(1);
     if (result.length === 0) {
       return { content: 'No entry yet' };
@@ -19,13 +19,13 @@ export class DebugController {
   }
 
   @Post('entry')
-  async createQEntry(@Body() body: QEntryInsert) {
+  async createEntry(@Body() body: NewEntry) {
     const result = await db
-      .insert(qEntries)
+      .insert(entries)
       .values({
         userId: body.userId ?? 1,
         content: body.content,
-        createdAt: Date.now(), // number in milliseconds
+        createdAt: Date.now(),
         timeSpentWriting: body.timeSpentWriting,
       })
       .returning();

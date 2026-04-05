@@ -1,3 +1,12 @@
+## Local testing without tauri build:
+
+- npx nx serve server --output-style=stream
+- npx nx serve client
+
+## Tauri build script:
+
+See build.ps1
+
 # New Nx Repository
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>

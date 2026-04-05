@@ -31,6 +31,7 @@
     "@types/node": "20.19.9",
     "@typescript-eslint/utils": "^8.40.0",
     "angular-eslint": "^21.2.0",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
     "nx": "22.6.2",
@@ -58,6 +59,8 @@
     "@nestjs/platform-express": "^11.0.0",
     "@org/shared": "^0.0.1",
     "axios": "^1.6.0",
+    "better-sqlite3": "^12.8.0",
+    "drizzle-orm": "^0.45.2",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0"
   }

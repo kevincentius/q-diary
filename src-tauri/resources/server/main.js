@@ -104,58 +104,47 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DebugController = void 0;
 const tslib_1 = __webpack_require__(4);
 const common_1 = __webpack_require__(1);
-const better_sqlite3_1 = tslib_1.__importDefault(__webpack_require__(8));
-const path = tslib_1.__importStar(__webpack_require__(9));
-const os = tslib_1.__importStar(__webpack_require__(10));
-const fs = tslib_1.__importStar(__webpack_require__(11));
-const appDataPath = path.join(os.homedir(), 'AppData', 'Roaming', 'q-diary');
-if (!fs.existsSync(appDataPath)) {
-    fs.mkdirSync(appDataPath, { recursive: true });
-}
-const logPath = path.join(appDataPath, 'server.log');
-const logger = new common_1.Logger('DebugController');
-const dbPath = path.join(appDataPath, 'q-diary.db');
-const db = new better_sqlite3_1.default(dbPath);
-fs.writeFileSync(logPath, `[${new Date().toISOString()}] Server starting, db: ${dbPath}\n`);
-db.exec(`
-  CREATE TABLE IF NOT EXISTS qentry (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
-fs.appendFileSync(logPath, `[${new Date().toISOString()}] Database initialized\n`);
+const client_1 = __webpack_require__(8);
+const schema_1 = __webpack_require__(11);
+const drizzle_orm_1 = __webpack_require__(16);
 let DebugController = class DebugController {
-    getQEntry() {
-        logger.log('GET /api/debug/qentry');
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] GET qentry\n`);
-        const row = db
-            .prepare('SELECT content FROM qentry ORDER BY id DESC LIMIT 1')
-            .get();
-        const result = { content: row?.content ?? 'No entry yet' };
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Result: ${JSON.stringify(result)}\n`);
-        return result;
+    async getQEntry() {
+        const result = await client_1.db
+            .select()
+            .from(schema_1.qEntries)
+            .orderBy((0, drizzle_orm_1.desc)(schema_1.qEntries.id))
+            .limit(1);
+        if (result.length === 0) {
+            return { content: 'No entry yet' };
+        }
+        return { content: result[0].content };
     }
-    createQEntry(body) {
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] POST qentry: ${JSON.stringify(body)}\n`);
-        const stmt = db.prepare('INSERT INTO qentry (content) VALUES (?)');
-        stmt.run(body.content);
-        return { content: body.content };
+    async createQEntry(body) {
+        const result = await client_1.db
+            .insert(schema_1.qEntries)
+            .values({
+            userId: body.userId ?? 1,
+            content: body.content,
+            createdAt: Date.now(), // number in milliseconds
+            timeSpentWriting: body.timeSpentWriting,
+        })
+            .returning();
+        return { content: result[0].content };
     }
 };
 exports.DebugController = DebugController;
 tslib_1.__decorate([
-    (0, common_1.Get)('qentry'),
+    (0, common_1.Get)('entry'),
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", []),
-    tslib_1.__metadata("design:returntype", Object)
+    tslib_1.__metadata("design:returntype", Promise)
 ], DebugController.prototype, "getQEntry", null);
 tslib_1.__decorate([
-    (0, common_1.Post)('qentry'),
+    (0, common_1.Post)('entry'),
     tslib_1.__param(0, (0, common_1.Body)()),
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", [Object]),
-    tslib_1.__metadata("design:returntype", Object)
+    tslib_1.__metadata("design:returntype", Promise)
 ], DebugController.prototype, "createQEntry", null);
 exports.DebugController = DebugController = tslib_1.__decorate([
     (0, common_1.Controller)('debug')
@@ -164,27 +153,98 @@ exports.DebugController = DebugController = tslib_1.__decorate([
 
 /***/ }),
 /* 8 */
-/***/ ((module) => {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
-module.exports = require("better-sqlite3");
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.dbPath = exports.db = void 0;
+const tslib_1 = __webpack_require__(4);
+const better_sqlite3_1 = tslib_1.__importDefault(__webpack_require__(9));
+const better_sqlite3_2 = __webpack_require__(10);
+const schema_1 = __webpack_require__(11);
+const path = tslib_1.__importStar(__webpack_require__(13));
+const os = tslib_1.__importStar(__webpack_require__(14));
+const fs = tslib_1.__importStar(__webpack_require__(15));
+const appDataPath = path.join(os.homedir(), 'AppData', 'Roaming', 'q-diary');
+if (!fs.existsSync(appDataPath)) {
+    fs.mkdirSync(appDataPath, { recursive: true });
+}
+const dbPath = path.join(appDataPath, 'q-diary.db');
+exports.dbPath = dbPath;
+const sqlite = new better_sqlite3_1.default(dbPath);
+// Enable WAL mode for better performance
+sqlite.pragma('journal_mode = WAL');
+// Initialize database - create table if not exists
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS qentries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
+    content TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    time_spent_writing INTEGER NOT NULL
+  )
+`);
+exports.db = (0, better_sqlite3_2.drizzle)(sqlite, { schema: { qEntries: schema_1.qEntries } });
+
 
 /***/ }),
 /* 9 */
 /***/ ((module) => {
 
-module.exports = require("path");
+module.exports = require("better-sqlite3");
 
 /***/ }),
 /* 10 */
 /***/ ((module) => {
 
-module.exports = require("os");
+module.exports = require("drizzle-orm/better-sqlite3");
 
 /***/ }),
 /* 11 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.qEntries = void 0;
+const sqlite_core_1 = __webpack_require__(12);
+exports.qEntries = (0, sqlite_core_1.sqliteTable)('qentries', {
+    id: (0, sqlite_core_1.integer)('id').primaryKey({ autoIncrement: true }),
+    userId: (0, sqlite_core_1.integer)('user_id').notNull().default(1),
+    content: (0, sqlite_core_1.text)('content').notNull(),
+    createdAt: (0, sqlite_core_1.integer)('created_at').notNull(), // plain integer (milliseconds)
+    timeSpentWriting: (0, sqlite_core_1.integer)('time_spent_writing').notNull(),
+});
+
+
+/***/ }),
+/* 12 */
+/***/ ((module) => {
+
+module.exports = require("drizzle-orm/sqlite-core");
+
+/***/ }),
+/* 13 */
+/***/ ((module) => {
+
+module.exports = require("path");
+
+/***/ }),
+/* 14 */
+/***/ ((module) => {
+
+module.exports = require("os");
+
+/***/ }),
+/* 15 */
 /***/ ((module) => {
 
 module.exports = require("fs");
+
+/***/ }),
+/* 16 */
+/***/ ((module) => {
+
+module.exports = require("drizzle-orm");
 
 /***/ })
 /******/ 	]);

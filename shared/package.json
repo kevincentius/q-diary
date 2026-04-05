@@ -15,6 +15,5 @@
   },
   "nx": {
     "name": "shared"
-  },
-  "dependencies": {}
+  }
 }

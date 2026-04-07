@@ -5,6 +5,15 @@ export const appRoutes: Route[] = [
   {
     path: 'entries',
     loadComponent: () =>
-      import('./view/entries/entries.component').then((m) => m.EntriesComponent),
+      import('./view/entries/entries.component').then(
+        (m) => m.EntriesComponent,
+      ),
+  },
+  {
+    path: 'experimental',
+    loadComponent: () =>
+      import('./view/experimental/experimental.component').then(
+        (m) => m.ExperimentalComponent,
+      ),
   },
 ];

@@ -1,5 +1,5 @@
-<div class="entry-detail h-box">
-  <p-panel header="Open Entry" styleClass="entry-panel">
+<div class="entry-detail h-box full-screen">
+  <p-panel header="Open Entry" class="entry-panel">
     @if (entry()) {
       <div class="entry-view">
         <div class="entry-header">
@@ -34,7 +34,7 @@
     }
   </p-panel>
 
-  <p-panel header="New Entry" styleClass="entry-panel">
+  <p-panel header="New Entry" class="entry-panel">
     <div class="new-entry">
       @if (!isWriting()) {
         <p-button (onClick)="startWriting()" label="Start Writing" />

@@ -34,7 +34,13 @@ export class EntryListComponent {
   }
 
   formatDate(timestamp: number): string {
-    return new Date(timestamp).toLocaleString();
+    const d = new Date(timestamp);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const MM = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}.${MM}.${yyyy} - ${hh}:${mm}`;
   }
 
   refresh() {

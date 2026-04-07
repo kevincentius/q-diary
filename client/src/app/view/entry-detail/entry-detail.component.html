@@ -1,65 +1,52 @@
-<div class="entry-detail">
-  <p-tabs [value]="activeIndex()">
-    <p-tablist>
-      <p-tab [value]="0">Open Entry</p-tab>
-      <p-tab [value]="1">New Entry</p-tab>
-    </p-tablist>
-    <p-tabpanels>
-      <p-tabpanel [value]="0">
-        @if (entry()) {
-          <div class="entry-view">
-            <div class="entry-header">
-              <span class="entry-date">{{
-                formatDate(entry()!.createdAt)
-              }}</span>
-              <span class="time-spent">{{
-                formatTime(entry()!.timeSpentWriting)
-              }}</span>
-              @if (!isEditing()) {
-                <p-button
-                  (onClick)="startEdit()"
-                  label="Edit"
-                  [outlined]="true"
-                />
-              } @else {
-                <p-button
-                  (onClick)="endEdit()"
-                  label="End Edit"
-                  severity="secondary"
-                />
-              }
-            </div>
-            @if (isEditing()) {
-              <textarea
-                class="entry-textarea"
-                [(ngModel)]="editContent"
-                rows="20"
-                pTextarea
-              ></textarea>
-              <p-button (onClick)="saveEdit()" label="Save" />
-            } @else {
-              <div class="entry-content">{{ entry()!.content }}</div>
-            }
+<div class="entry-detail h-box">
+  <p-panel header="Open Entry" styleClass="entry-panel">
+    @if (entry()) {
+      <div class="entry-view">
+        <div class="entry-header">
+          <span class="entry-date">{{ formatDate(entry()!.createdAt) }}</span>
+          <span class="time-spent">{{
+            formatTime(entry()!.timeSpentWriting)
+          }}</span>
+        </div>
+        @if (isEditing()) {
+          <textarea
+            class="entry-textarea"
+            [(ngModel)]="editContent"
+            rows="15"
+            pTextarea
+          ></textarea>
+          <div class="button-row">
+            <p-button (onClick)="saveEdit()" label="Save" />
+            <p-button
+              (onClick)="endEdit()"
+              label="Cancel"
+              severity="secondary"
+              [outlined]="true"
+            />
           </div>
         } @else {
-          <p>Select an entry from the list</p>
+          <div class="entry-content">{{ entry()!.content }}</div>
+          <p-button (onClick)="startEdit()" label="Edit" [outlined]="true" />
         }
-      </p-tabpanel>
-      <p-tabpanel [value]="1">
-        <div class="new-entry">
-          @if (!isWriting()) {
-            <p-button (onClick)="startWriting()" label="Start Writing" />
-          } @else {
-            <textarea
-              class="entry-textarea"
-              [(ngModel)]="newEntryContent"
-              rows="20"
-              pTextarea
-            ></textarea>
-            <p-button (onClick)="saveNewEntry()" label="Save" />
-          }
-        </div>
-      </p-tabpanel>
-    </p-tabpanels>
-  </p-tabs>
+      </div>
+    } @else {
+      <p>Select an entry from the list</p>
+    }
+  </p-panel>
+
+  <p-panel header="New Entry" styleClass="entry-panel">
+    <div class="new-entry">
+      @if (!isWriting()) {
+        <p-button (onClick)="startWriting()" label="Start Writing" />
+      } @else {
+        <textarea
+          class="entry-textarea"
+          [(ngModel)]="newEntryContent"
+          rows="15"
+          pTextarea
+        ></textarea>
+        <p-button (onClick)="saveNewEntry()" label="Save" />
+      }
+    </div>
+  </p-panel>
 </div>

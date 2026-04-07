@@ -8,9 +8,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TabsModule } from 'primeng/tabs';
 import { ButtonModule } from 'primeng/button';
 import { TextareaModule } from 'primeng/textarea';
+import { PanelModule } from 'primeng/panel';
 import { EntriesService } from '../../service/entries.service';
 import type { Entry } from '@org/shared';
 
@@ -18,9 +18,9 @@ import type { Entry } from '@org/shared';
   imports: [
     CommonModule,
     FormsModule,
-    TabsModule,
     ButtonModule,
     TextareaModule,
+    PanelModule,
   ],
   selector: 'app-entry-detail',
   standalone: true,
@@ -33,17 +33,12 @@ export class EntryDetailComponent {
 
   private entriesService = inject(EntriesService);
 
-  activeIndex = signal(0);
   isEditing = signal(false);
   editContent = '';
 
   isWriting = signal(false);
   newEntryContent = '';
   writingStartTime = 0;
-
-  switchTab(index: number) {
-    this.activeIndex.set(index);
-  }
 
   startEdit() {
     this.editContent = this.entry()?.content || '';
@@ -84,7 +79,6 @@ export class EntryDetailComponent {
         this.isWriting.set(false);
         this.newEntryContent = '';
         this.writingStartTime = 0;
-        this.activeIndex.set(0);
         this.entrySaved.emit();
       });
   }

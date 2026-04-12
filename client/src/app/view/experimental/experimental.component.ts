@@ -2,9 +2,18 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AnalysisService } from '../../service/analysis.service';
+import { OpenAIService } from '../../service/openai.service';
+import { TopicSuggesterComponent } from './topic-suggester.component';
+import { NoteFinderComponent } from './note-finder.component';
+import { openaiConfigDefaults } from '../../config/openai.config';
 
 @Component({
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TopicSuggesterComponent,
+    NoteFinderComponent,
+  ],
   selector: 'app-experimental',
   standalone: true,
   templateUrl: './experimental.component.html',
@@ -12,12 +21,34 @@ import { AnalysisService } from '../../service/analysis.service';
 })
 export class ExperimentalComponent {
   private analysisService = inject(AnalysisService);
+  openaiService = inject(OpenAIService);
 
   startDateTime = signal(this.getDefaultStart());
   endDateTime = signal(this.getDefaultEnd());
   includeTimeSpent = signal(true);
   result = signal<string>('');
   loading = signal(false);
+
+  baseUrl = signal(openaiConfigDefaults.baseUrl);
+  model = signal(openaiConfigDefaults.model);
+  apiToken = signal(openaiConfigDefaults.apiToken);
+  testResult = signal<string>('');
+  testing = signal(false);
+
+  updateBaseUrl(value: string) {
+    this.baseUrl.set(value);
+    this.openaiService.baseUrl.set(value);
+  }
+
+  updateModel(value: string) {
+    this.model.set(value);
+    this.openaiService.model.set(value);
+  }
+
+  updateApiToken(value: string) {
+    this.apiToken.set(value);
+    this.openaiService.apiToken.set(value);
+  }
 
   private getDefaultStart(): string {
     const d = new Date();
@@ -66,5 +97,26 @@ export class ExperimentalComponent {
 
   get contentLength(): number {
     return this.result().length;
+  }
+
+  testConnection() {
+    this.openaiService.baseUrl.set(this.baseUrl());
+    this.openaiService.model.set(this.model());
+    this.openaiService.apiToken.set(this.apiToken());
+
+    this.testing.set(true);
+    this.testResult.set('');
+
+    this.openaiService.testConnection().subscribe({
+      next: (res) => {
+        const content = res.choices?.[0]?.message?.content ?? '';
+        this.testResult.set(`Connected! Response: ${content}`);
+        this.testing.set(false);
+      },
+      error: (err) => {
+        this.testResult.set(`Error: ${err.message}`);
+        this.testing.set(false);
+      },
+    });
   }
 }

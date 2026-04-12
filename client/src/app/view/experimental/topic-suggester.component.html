@@ -1,0 +1,42 @@
+<div class="topic-suggester">
+  <h3>Topic Suggestions</h3>
+
+  <div class="inputs">
+    <div class="field">
+      <label for="maxTokens">Max Characters</label>
+      <input
+        id="maxTokens"
+        type="number"
+        [ngModel]="maxTokens()"
+        (ngModelChange)="maxTokens.set($event)"
+      />
+    </div>
+    <div class="field">
+      <label for="trackedTopics">Tracked Topics (comma separated)</label>
+      <input
+        id="trackedTopics"
+        type="text"
+        [ngModel]="trackedTopics()"
+        (ngModelChange)="trackedTopics.set($event)"
+      />
+    </div>
+    <button (click)="suggestTopics()" [disabled]="loading()">
+      {{ loading() ? 'Analyzing...' : 'Suggest Topics' }}
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
+  }
+
+  @if (suggestions().length > 0) {
+    <div class="suggestions">
+      <h4>Suggested Topics</h4>
+      <ul>
+        @for (suggestion of suggestions(); track suggestion) {
+          <li>{{ suggestion }}</li>
+        }
+      </ul>
+    </div>
+  }
+</div>

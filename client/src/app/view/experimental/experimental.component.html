@@ -1,40 +1,85 @@
 <div class="experimental">
   <h1>Experimental - Concat</h1>
 
-  <div class="inputs">
-    <div class="field">
-      <label for="start">Start</label>
-      <input
-        id="start"
-        type="datetime-local"
-        [ngModel]="startDateTime()"
-        (ngModelChange)="startDateTime.set($event)"
-      />
+  <div class="section">
+    <h2>OpenAI Settings</h2>
+    <div class="inputs">
+      <div class="field">
+        <label for="baseUrl">Base URL</label>
+        <input
+          id="baseUrl"
+          type="text"
+          [ngModel]="baseUrl()"
+          (ngModelChange)="updateBaseUrl($event)"
+        />
+      </div>
+      <div class="field">
+        <label for="model">Model</label>
+        <input
+          id="model"
+          type="text"
+          [ngModel]="model()"
+          (ngModelChange)="updateModel($event)"
+        />
+      </div>
+      <div class="field">
+        <label for="apiToken">API Token</label>
+        <input
+          id="apiToken"
+          type="password"
+          [ngModel]="apiToken()"
+          (ngModelChange)="updateApiToken($event)"
+        />
+      </div>
+      <button (click)="testConnection()" [disabled]="testing()">
+        {{ testing() ? 'Testing...' : 'Test Connection' }}
+      </button>
+      @if (testResult()) {
+        <div class="test-result">{{ testResult() }}</div>
+      }
     </div>
-    <div class="field">
-      <label for="end">End</label>
-      <input
-        id="end"
-        type="datetime-local"
-        [ngModel]="endDateTime()"
-        (ngModelChange)="endDateTime.set($event)"
-      />
+  </div>
+
+  <div class="section">
+    <h2>Concat</h2>
+    <div class="inputs">
+      <div class="field">
+        <label for="start">Start</label>
+        <input
+          id="start"
+          type="datetime-local"
+          [ngModel]="startDateTime()"
+          (ngModelChange)="startDateTime.set($event)"
+        />
+      </div>
+      <div class="field">
+        <label for="end">End</label>
+        <input
+          id="end"
+          type="datetime-local"
+          [ngModel]="endDateTime()"
+          (ngModelChange)="endDateTime.set($event)"
+        />
+      </div>
+      <label class="checkbox">
+        <input
+          type="checkbox"
+          [ngModel]="includeTimeSpent()"
+          (ngModelChange)="includeTimeSpent.set($event)"
+        />
+        Include time spent
+      </label>
+      <button (click)="concat()" [disabled]="loading()">
+        {{ loading() ? 'Processing...' : 'Concat' }}
+      </button>
     </div>
-    <label class="checkbox">
-      <input
-        type="checkbox"
-        [ngModel]="includeTimeSpent()"
-        (ngModelChange)="includeTimeSpent.set($event)"
-      />
-      Include time spent
-    </label>
-    <button (click)="concat()" [disabled]="loading()">
-      {{ loading() ? 'Processing...' : 'Concat' }}
-    </button>
   </div>
 
   @if (result()) {
     <div class="result-info">Content length: {{ contentLength }} chars</div>
     <textarea readonly [value]="result()"></textarea>
   }
+
+  <app-topic-suggester></app-topic-suggester>
+  <app-note-finder></app-note-finder>
 </div>

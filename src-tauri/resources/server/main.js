@@ -25,14 +25,23 @@ const common_1 = __webpack_require__(1);
 const app_controller_1 = __webpack_require__(5);
 const app_service_1 = __webpack_require__(6);
 const debug_controller_1 = __webpack_require__(7);
+const entries_controller_1 = __webpack_require__(18);
+const entries_service_1 = __webpack_require__(19);
+const analysis_controller_1 = __webpack_require__(20);
+const analysis_service_1 = __webpack_require__(21);
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = tslib_1.__decorate([
     (0, common_1.Module)({
         imports: [],
-        controllers: [app_controller_1.AppController, debug_controller_1.DebugController],
-        providers: [app_service_1.AppService],
+        controllers: [
+            app_controller_1.AppController,
+            debug_controller_1.DebugController,
+            entries_controller_1.EntriesController,
+            analysis_controller_1.AnalysisController,
+        ],
+        providers: [app_service_1.AppService, entries_service_1.EntriesService, analysis_service_1.AnalysisService],
     })
 ], AppModule);
 
@@ -106,12 +115,15 @@ const tslib_1 = __webpack_require__(4);
 const common_1 = __webpack_require__(1);
 const client_1 = __webpack_require__(8);
 const schema_1 = __webpack_require__(11);
-const drizzle_orm_1 = __webpack_require__(16);
+const user_1 = __webpack_require__(16);
+const drizzle_orm_1 = __webpack_require__(17);
 let DebugController = class DebugController {
     async getEntry() {
+        const userId = (0, user_1.getCurrentUserId)();
         const result = await client_1.db
             .select()
             .from(schema_1.entries)
+            .where((0, drizzle_orm_1.eq)(schema_1.entries.userId, userId))
             .orderBy((0, drizzle_orm_1.desc)(schema_1.entries.id))
             .limit(1);
         if (result.length === 0) {
@@ -120,10 +132,11 @@ let DebugController = class DebugController {
         return { content: result[0].content };
     }
     async createEntry(body) {
+        const userId = (0, user_1.getCurrentUserId)();
         const result = await client_1.db
             .insert(schema_1.entries)
             .values({
-            userId: body.userId ?? 1,
+            userId,
             content: body.content,
             createdAt: Date.now(),
             timeSpentWriting: body.timeSpentWriting,
@@ -188,42 +201,48 @@ sqlite.exec(`
   -- Points (extracted data from entries)
   CREATE TABLE IF NOT EXISTS points (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     source_entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
     created_at INTEGER NOT NULL
   );
 
-  -- Tags
+  -- Tags (per user)
   CREATE TABLE IF NOT EXISTS tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL DEFAULT 1,
+    name TEXT NOT NULL,
     parent_tag_id INTEGER REFERENCES tags(id)
   );
 
-  -- Point Tags (many-to-many)
+  -- Point Tags (many-to-many, per user)
   CREATE TABLE IF NOT EXISTS point_tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     point_id INTEGER NOT NULL REFERENCES points(id) ON DELETE CASCADE,
     tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE
   );
 
-  -- Fields (definitions)
+  -- Fields (definitions, per user)
   CREATE TABLE IF NOT EXISTS fields (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     name TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('numeric', 'timestamp', 'enum', 'text')),
     description TEXT
   );
 
-  -- Enum Values (for enum fields)
+  -- Enum Values (for enum fields, per user)
   CREATE TABLE IF NOT EXISTS enum_values (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     field_id INTEGER NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
     value TEXT NOT NULL
   );
 
-  -- Field Values (actual data)
+  -- Field Values (actual data, per user)
   CREATE TABLE IF NOT EXISTS field_values (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     point_id INTEGER NOT NULL REFERENCES points(id) ON DELETE CASCADE,
     field_id INTEGER NOT NULL REFERENCES fields(id) ON DELETE CASCADE,
     numeric_value INTEGER,
@@ -231,9 +250,17 @@ sqlite.exec(`
   );
 
   -- Indexes for performance
+  CREATE INDEX IF NOT EXISTS idx_entries_user ON entries(user_id);
+  CREATE INDEX IF NOT EXISTS idx_points_user ON points(user_id);
   CREATE INDEX IF NOT EXISTS idx_points_source_entry ON points(source_entry_id);
+  CREATE INDEX IF NOT EXISTS idx_tags_user_name ON tags(user_id, name);
+  CREATE INDEX IF NOT EXISTS idx_point_tags_user ON point_tags(user_id);
   CREATE INDEX IF NOT EXISTS idx_point_tags_point ON point_tags(point_id);
   CREATE INDEX IF NOT EXISTS idx_point_tags_tag ON point_tags(tag_id);
+  CREATE INDEX IF NOT EXISTS idx_fields_user_name ON fields(user_id, name);
+  CREATE INDEX IF NOT EXISTS idx_enum_values_user ON enum_values(user_id);
+  CREATE INDEX IF NOT EXISTS idx_enum_values_field ON enum_values(field_id);
+  CREATE INDEX IF NOT EXISTS idx_field_values_user ON field_values(user_id);
   CREATE INDEX IF NOT EXISTS idx_field_values_point ON field_values(point_id);
   CREATE INDEX IF NOT EXISTS idx_field_values_field ON field_values(field_id);
 `);
@@ -275,24 +302,27 @@ exports.entries = (0, sqlite_core_1.sqliteTable)('entries', {
 // ======================
 exports.points = (0, sqlite_core_1.sqliteTable)('points', {
     id: (0, sqlite_core_1.integer)('id').primaryKey({ autoIncrement: true }),
+    userId: (0, sqlite_core_1.integer)('user_id').notNull().default(1),
     sourceEntryId: (0, sqlite_core_1.integer)('source_entry_id')
         .notNull()
         .references(() => exports.entries.id, { onDelete: 'cascade' }),
     createdAt: (0, sqlite_core_1.integer)('created_at').notNull(),
 });
 // ======================
-// Tags
+// Tags (per user)
 // ======================
 exports.tags = (0, sqlite_core_1.sqliteTable)('tags', {
     id: (0, sqlite_core_1.integer)('id').primaryKey({ autoIncrement: true }),
-    name: (0, sqlite_core_1.text)('name').notNull().unique(),
+    userId: (0, sqlite_core_1.integer)('user_id').notNull().default(1),
+    name: (0, sqlite_core_1.text)('name').notNull(),
     parentTagId: (0, sqlite_core_1.integer)('parent_tag_id').references(() => exports.tags.id),
 });
 // ======================
-// Point Tags (many-to-many)
+// Point Tags (many-to-many, per user)
 // ======================
 exports.pointTags = (0, sqlite_core_1.sqliteTable)('point_tags', {
     id: (0, sqlite_core_1.integer)('id').primaryKey({ autoIncrement: true }),
+    userId: (0, sqlite_core_1.integer)('user_id').notNull().default(1),
     pointId: (0, sqlite_core_1.integer)('point_id')
         .notNull()
         .references(() => exports.points.id, { onDelete: 'cascade' }),
@@ -301,7 +331,7 @@ exports.pointTags = (0, sqlite_core_1.sqliteTable)('point_tags', {
         .references(() => exports.tags.id, { onDelete: 'cascade' }),
 });
 // ======================
-// Fields (definitions)
+// Fields (definitions, per user)
 // ======================
 exports.fieldTypes = {
     numeric: 'numeric',
@@ -311,25 +341,28 @@ exports.fieldTypes = {
 };
 exports.fields = (0, sqlite_core_1.sqliteTable)('fields', {
     id: (0, sqlite_core_1.integer)('id').primaryKey({ autoIncrement: true }),
+    userId: (0, sqlite_core_1.integer)('user_id').notNull().default(1),
     name: (0, sqlite_core_1.text)('name').notNull(),
     type: (0, sqlite_core_1.text)('type').notNull(), // 'numeric' | 'timestamp' | 'enum' | 'text'
     description: (0, sqlite_core_1.text)('description'),
 });
 // ======================
-// Enum Values (for enum fields)
+// Enum Values (for enum fields, per user)
 // ======================
 exports.enumValues = (0, sqlite_core_1.sqliteTable)('enum_values', {
     id: (0, sqlite_core_1.integer)('id').primaryKey({ autoIncrement: true }),
+    userId: (0, sqlite_core_1.integer)('user_id').notNull().default(1),
     fieldId: (0, sqlite_core_1.integer)('field_id')
         .notNull()
         .references(() => exports.fields.id, { onDelete: 'cascade' }),
     value: (0, sqlite_core_1.text)('value').notNull(),
 });
 // ======================
-// Field Values (actual data)
+// Field Values (actual data, per user)
 // ======================
 exports.fieldValues = (0, sqlite_core_1.sqliteTable)('field_values', {
     id: (0, sqlite_core_1.integer)('id').primaryKey({ autoIncrement: true }),
+    userId: (0, sqlite_core_1.integer)('user_id').notNull().default(1),
     pointId: (0, sqlite_core_1.integer)('point_id')
         .notNull()
         .references(() => exports.points.id, { onDelete: 'cascade' }),
@@ -367,9 +400,283 @@ module.exports = require("fs");
 
 /***/ }),
 /* 16 */
+/***/ ((__unused_webpack_module, exports) => {
+
+
+// User helper - hardcoded for now, will be replaced with auth later
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getCurrentUserId = getCurrentUserId;
+exports.setCurrentUserId = setCurrentUserId;
+let currentUserId = 1;
+function getCurrentUserId() {
+    return currentUserId;
+}
+function setCurrentUserId(userId) {
+    currentUserId = userId;
+}
+
+
+/***/ }),
+/* 17 */
 /***/ ((module) => {
 
 module.exports = require("drizzle-orm");
+
+/***/ }),
+/* 18 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EntriesController = void 0;
+const tslib_1 = __webpack_require__(4);
+const common_1 = __webpack_require__(1);
+const entries_service_1 = __webpack_require__(19);
+let EntriesController = class EntriesController {
+    constructor(entriesService) {
+        this.entriesService = entriesService;
+    }
+    getAllEntries() {
+        return this.entriesService.getAllEntries();
+    }
+    getEntryById(id) {
+        const entry = this.entriesService.getEntryById(id);
+        if (!entry) {
+            return { error: 'Entry not found' };
+        }
+        return entry;
+    }
+    createEntry(body) {
+        return this.entriesService.createEntry(body.content, body.timeSpentWriting);
+    }
+    updateEntry(id, body) {
+        const entry = this.entriesService.updateEntry(id, body.content, body.timeSpentWriting);
+        if (!entry) {
+            return { error: 'Entry not found' };
+        }
+        return entry;
+    }
+    deleteEntry(id) {
+        const deleted = this.entriesService.deleteEntry(id);
+        return { success: deleted };
+    }
+};
+exports.EntriesController = EntriesController;
+tslib_1.__decorate([
+    (0, common_1.Get)(),
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", []),
+    tslib_1.__metadata("design:returntype", void 0)
+], EntriesController.prototype, "getAllEntries", null);
+tslib_1.__decorate([
+    (0, common_1.Get)(':id'),
+    tslib_1.__param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", [Number]),
+    tslib_1.__metadata("design:returntype", void 0)
+], EntriesController.prototype, "getEntryById", null);
+tslib_1.__decorate([
+    (0, common_1.Post)(),
+    tslib_1.__param(0, (0, common_1.Body)()),
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", [Object]),
+    tslib_1.__metadata("design:returntype", void 0)
+], EntriesController.prototype, "createEntry", null);
+tslib_1.__decorate([
+    (0, common_1.Patch)(':id'),
+    tslib_1.__param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    tslib_1.__param(1, (0, common_1.Body)()),
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", [Number, Object]),
+    tslib_1.__metadata("design:returntype", void 0)
+], EntriesController.prototype, "updateEntry", null);
+tslib_1.__decorate([
+    (0, common_1.Delete)(':id'),
+    tslib_1.__param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", [Number]),
+    tslib_1.__metadata("design:returntype", void 0)
+], EntriesController.prototype, "deleteEntry", null);
+exports.EntriesController = EntriesController = tslib_1.__decorate([
+    (0, common_1.Controller)('entries'),
+    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof entries_service_1.EntriesService !== "undefined" && entries_service_1.EntriesService) === "function" ? _a : Object])
+], EntriesController);
+
+
+/***/ }),
+/* 19 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EntriesService = void 0;
+const tslib_1 = __webpack_require__(4);
+const common_1 = __webpack_require__(1);
+const client_1 = __webpack_require__(8);
+const schema_1 = __webpack_require__(11);
+const drizzle_orm_1 = __webpack_require__(17);
+const user_1 = __webpack_require__(16);
+let EntriesService = class EntriesService {
+    getAllEntries() {
+        const userId = (0, user_1.getCurrentUserId)();
+        const result = client_1.db
+            .select()
+            .from(schema_1.entries)
+            .where((0, drizzle_orm_1.eq)(schema_1.entries.userId, userId))
+            .orderBy((0, drizzle_orm_1.desc)(schema_1.entries.createdAt))
+            .limit(100)
+            .all();
+        return result;
+    }
+    getEntryById(id) {
+        const userId = (0, user_1.getCurrentUserId)();
+        const result = client_1.db
+            .select()
+            .from(schema_1.entries)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.entries.userId, userId), (0, drizzle_orm_1.eq)(schema_1.entries.id, id)))
+            .limit(1)
+            .get();
+        return result;
+    }
+    createEntry(content, timeSpentWriting) {
+        const userId = (0, user_1.getCurrentUserId)();
+        const createdAt = Date.now();
+        const result = client_1.db
+            .insert(schema_1.entries)
+            .values({
+            userId,
+            content,
+            createdAt,
+            timeSpentWriting,
+        })
+            .returning()
+            .get();
+        return result;
+    }
+    updateEntry(id, content, timeSpentWriting) {
+        const userId = (0, user_1.getCurrentUserId)();
+        const result = client_1.db
+            .update(schema_1.entries)
+            .set({ content, timeSpentWriting })
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.entries.id, id), (0, drizzle_orm_1.eq)(schema_1.entries.userId, userId)))
+            .returning()
+            .get();
+        return result;
+    }
+    deleteEntry(id) {
+        const userId = (0, user_1.getCurrentUserId)();
+        const result = client_1.db
+            .delete(schema_1.entries)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.entries.id, id), (0, drizzle_orm_1.eq)(schema_1.entries.userId, userId)))
+            .run();
+        return result.changes > 0;
+    }
+};
+exports.EntriesService = EntriesService;
+exports.EntriesService = EntriesService = tslib_1.__decorate([
+    (0, common_1.Injectable)()
+], EntriesService);
+
+
+/***/ }),
+/* 20 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AnalysisController = void 0;
+const tslib_1 = __webpack_require__(4);
+const common_1 = __webpack_require__(1);
+const analysis_service_1 = __webpack_require__(21);
+let AnalysisController = class AnalysisController {
+    constructor(analysisService) {
+        this.analysisService = analysisService;
+    }
+    concatEntries(body) {
+        return this.analysisService.concatEntries(body.startDateTime, body.endDateTime, body.includeTimeSpent ?? true);
+    }
+};
+exports.AnalysisController = AnalysisController;
+tslib_1.__decorate([
+    (0, common_1.Post)('concat'),
+    tslib_1.__param(0, (0, common_1.Body)()),
+    tslib_1.__metadata("design:type", Function),
+    tslib_1.__metadata("design:paramtypes", [Object]),
+    tslib_1.__metadata("design:returntype", void 0)
+], AnalysisController.prototype, "concatEntries", null);
+exports.AnalysisController = AnalysisController = tslib_1.__decorate([
+    (0, common_1.Controller)('analysis'),
+    tslib_1.__metadata("design:paramtypes", [typeof (_a = typeof analysis_service_1.AnalysisService !== "undefined" && analysis_service_1.AnalysisService) === "function" ? _a : Object])
+], AnalysisController);
+
+
+/***/ }),
+/* 21 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AnalysisService = void 0;
+const tslib_1 = __webpack_require__(4);
+const common_1 = __webpack_require__(1);
+const client_1 = __webpack_require__(8);
+const schema_1 = __webpack_require__(11);
+const drizzle_orm_1 = __webpack_require__(17);
+const user_1 = __webpack_require__(16);
+let AnalysisService = class AnalysisService {
+    concatEntries(startDateTime, endDateTime, includeTimeSpent = true) {
+        const userId = (0, user_1.getCurrentUserId)();
+        const result = client_1.db
+            .select()
+            .from(schema_1.entries)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.entries.userId, userId), (0, drizzle_orm_1.gte)(schema_1.entries.createdAt, startDateTime), (0, drizzle_orm_1.lt)(schema_1.entries.createdAt, endDateTime)))
+            .orderBy((0, drizzle_orm_1.asc)(schema_1.entries.createdAt))
+            .all();
+        if (result.length === 0) {
+            return { content: '' };
+        }
+        const sections = result.map((entry) => {
+            const date = new Date(entry.createdAt);
+            const dateStr = this.formatDate(date);
+            let header = dateStr;
+            if (includeTimeSpent) {
+                header += ` (${this.formatTimeSpent(entry.timeSpentWriting)})`;
+            }
+            const content = entry.content;
+            return `## ${header}
+
+${content}`;
+        });
+        return { content: sections.join('\n\n') };
+    }
+    formatDate(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}.${month}.${year} ${hours}:${minutes}`;
+    }
+    formatTimeSpent(ms) {
+        const totalSeconds = Math.round(ms / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        if (minutes === 0) {
+            return `${seconds}s`;
+        }
+        if (seconds === 0) {
+            return `${minutes}m`;
+        }
+        return `${minutes}m ${seconds}s`;
+    }
+};
+exports.AnalysisService = AnalysisService;
+exports.AnalysisService = AnalysisService = tslib_1.__decorate([
+    (0, common_1.Injectable)()
+], AnalysisService);
+
 
 /***/ })
 /******/ 	]);

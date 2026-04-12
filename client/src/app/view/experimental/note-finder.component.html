@@ -1,0 +1,56 @@
+<div class="note-finder">
+  <h3>Note Finder</h3>
+
+  <div class="inputs">
+    <div class="field wide">
+      <label for="threadInput">Threads (one per line: title,description)</label>
+      <textarea
+        id="threadInput"
+        [ngModel]="threadInput()"
+        (ngModelChange)="threadInput.set($event)"
+        rows="6"
+      ></textarea>
+    </div>
+    <div class="field">
+      <label for="maxEntries">Max Entries</label>
+      <input
+        id="maxEntries"
+        type="number"
+        [ngModel]="maxEntries()"
+        (ngModelChange)="maxEntries.set($event)"
+      />
+    </div>
+    <div class="buttons">
+      @if (loading()) {
+        <button class="cancel" (click)="cancel()">Cancel</button>
+      } @else {
+        <button (click)="start()">Start</button>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
+  }
+
+  @if (done() && !error()) {
+    <div class="done">Done</div>
+  }
+
+  @if (notesByThread().size > 0) {
+    @for (thread of notesByThread() | keyvalue; track thread.key) {
+      <div class="thread-result">
+        <h4>{{ thread.key }} ({{ thread.value.length }} notes)</h4>
+        @for (note of thread.value; track note.originalEntryId) {
+          <div class="note">
+            <div class="note-header">Entry #{{ note.originalEntryId }}</div>
+            <div class="segment">{{ note.originalEntrySegment }}</div>
+            @if (note.additionalContext) {
+              <div class="context">Context: {{ note.additionalContext }}</div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

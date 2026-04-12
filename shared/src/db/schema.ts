@@ -124,3 +124,24 @@ export interface NewFieldValue {
   numericValue?: number;
   stringValue?: string;
 }
+
+// ======================
+// Thread (for Note Finder experimental)
+// ======================
+
+export interface Thread {
+  title: string;
+  description?: string;
+}
+
+export interface Note {
+  threadTitle: string;
+  originalEntryId: number;
+  originalEntrySegment: string;
+  additionalContext?: string;
+}
+
+export interface NoteCollection {
+  threads: Thread[];
+  notes: Note[];
+}

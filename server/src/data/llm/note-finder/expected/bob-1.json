@@ -1,0 +1,5 @@
+{
+  "entryFile": "rain-walk",
+  "threadKey": "rain-1",
+  "expectedSegments": ["It was raining lightly but I enjoyed the fresh air"]
+}

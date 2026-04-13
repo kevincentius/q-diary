@@ -91,7 +91,12 @@
     "rxjs": "^7.8.0",
     "tslib": "^2.3.0"
   },
+  "scripts": {
+    "eval": "npx ts-node --transpile-only src/llm/eval/index.ts"
+  },
   "devDependencies": {
-    "@nestjs/testing": "^11.0.0"
+    "@nestjs/testing": "^11.0.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.2"
   }
 }

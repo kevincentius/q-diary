@@ -56,14 +56,7 @@ export class AnalysisService {
     maxEntries: number,
     aborted: AbortSignal,
   ): Promise<Note[]> {
-    const userId = getCurrentUserId();
-    const dbEntries = db
-      .select()
-      .from(entries)
-      .where(eq(entries.userId, userId))
-      .orderBy(desc(entries.createdAt))
-      .limit(maxEntries)
-      .all();
+    const dbEntries = await this.getEntriesForNotes(maxEntries);
     const notes: Note[] = [];
 
     for (const entry of dbEntries) {
@@ -74,7 +67,20 @@ export class AnalysisService {
     return notes;
   }
 
-  private async checkEntryForThread(
+  async getEntriesForNotes(
+    maxEntries: number,
+  ): Promise<{ id: number; content: string }[]> {
+    const userId = getCurrentUserId();
+    return db
+      .select({ id: entries.id, content: entries.content })
+      .from(entries)
+      .where(eq(entries.userId, userId))
+      .orderBy(desc(entries.createdAt))
+      .limit(maxEntries)
+      .all() as { id: number; content: string }[];
+  }
+
+  async checkEntryForThread(
     entry: { id: number; content: string },
     thread: Thread,
   ): Promise<Note[]> {

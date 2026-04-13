@@ -48,3 +48,6 @@ Thumbs.db
 .claude/settings.local.json
 .nx/polygraph
 .angular
+
+# LLM eval data
+server/data/

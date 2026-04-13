@@ -1,11 +1,18 @@
 import { Controller, Post, Get, Body, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { AnalysisService } from './analysis.service';
+import { NoteFinder } from '../llm/note-finder';
 import type { Thread, Note } from '@org/shared';
 
 @Controller('analysis')
 export class AnalysisController {
-  constructor(private readonly analysisService: AnalysisService) {}
+  private noteFinder: NoteFinder;
+
+  constructor(private readonly analysisService: AnalysisService) {
+    this.noteFinder = new NoteFinder((maxEntries) =>
+      analysisService.getEntriesForNotes(maxEntries),
+    );
+  }
 
   @Post('concat')
   concatEntries(
@@ -41,16 +48,19 @@ export class AnalysisController {
     });
 
     try {
-      for (let i = 0; i < body.threads.length && !aborted.value; i++) {
-        const thread = body.threads[i];
-        const notes = await this.analysisService.findNotesForThread(
-          thread,
-          maxEntries,
-          aborted,
-        );
-        for (const note of notes) {
+      const entries = await this.noteFinder.getEntries(maxEntries);
+
+      for (let i = 0; i < entries.length && !aborted.value; i++) {
+        const entry = entries[i];
+
+        for (const thread of body.threads) {
           if (aborted.value) break;
-          res.write(`data: ${JSON.stringify(note)}\n\n`);
+
+          const notes = await this.noteFinder.processEntryThread(entry, thread);
+          for (const note of notes) {
+            if (aborted.value) break;
+            res.write(`data: ${JSON.stringify(note)}\n\n`);
+          }
         }
       }
     } catch (err: unknown) {
